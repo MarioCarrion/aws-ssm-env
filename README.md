@@ -10,7 +10,7 @@ Storing configuration in the environment, as in a [Twelve factor App](https://12
 
 ## How does it work?
 
-1. Define a new struct that will hold all your configuration values, decorate it using the `awsssm` tag.
+1. Define a new struct that will hold all your configuration values, decorate it using the `ssm` tag.
 1. Load your configuration file, if needed.
 1. Initialize [AWS SSM](https://github.com/aws/aws-sdk-go/tree/master/service/ssm)
 1. Load the configuration values.
