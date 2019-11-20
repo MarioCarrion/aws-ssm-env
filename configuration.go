@@ -1,3 +1,5 @@
+// Package awsssmenv allows you to load environment variable and if indicated
+// get remote secure values from AWS SSM.
 package awsssmenv
 
 import (
@@ -6,14 +8,19 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
+//go:generate counterfeiter -o awsssmenvtesting/ssm.gen.go . SSM
+
 type (
-	// SSM defines the type implementing the SSM call.
+	// SSM defines the type implementing the SSM call. This type should define
+	// the exact method defined in github.com/aws/aws-sdk-go/service/ssm so the
+	// real AWS SSM can be used.
 	SSM interface {
 		GetParameterWithContext(aws.Context, *ssm.GetParameterInput, ...request.Option) (*ssm.GetParameterOutput, error)
 	}
@@ -53,7 +60,9 @@ func loadFields(conf interface{}) ([]field, error) {
 	}
 
 	var fields []field
+
 	t := rv.Type()
+
 	for i := 0; i < rv.NumField(); i++ {
 		rf := rv.Field(i)
 
@@ -63,19 +72,22 @@ func loadFields(conf interface{}) ([]field, error) {
 			value string
 		)
 
-		if value, ok = t.Field(i).Tag.Lookup(tagEncrypted); ok {
-			f.Encrypted = true
-		}
-
 		if value, ok = t.Field(i).Tag.Lookup(tagName); ok {
 			f.Index = i
-			f.Name = value
+
+			values := strings.Split(value, ",")
+			f.Name = values[0]
+
+			if len(values) == 2 && values[1] == tagEncrypted {
+				f.Encrypted = true
+			}
 		}
 
 		if ok {
 			if rf.Kind() != reflect.String {
 				return nil, ErrInvalidFieldType
 			}
+
 			if !rf.CanSet() {
 				return nil, ErrInvalidFieldAccess
 			}
@@ -87,8 +99,13 @@ func loadFields(conf interface{}) ([]field, error) {
 	return fields, nil
 }
 
-// Get uses environment variables to set field values in the conf struct, when
-// necessary it requests remote values using AWS SSM.
+// Get sets field values in the conf struct from environment variables when the
+// fields are decorated with "ssm". If there's another environment variable
+// with the same name postfixed with "_SSM" then that value is used for
+// querying SSM for the remote value.
+//
+// It supports the "encrypted" option to indicate if the value should be
+// retrieved from AWS SSM using encryption.
 func Get(ctx context.Context, conf interface{}, svc SSM) error {
 	fields, err := loadFields(conf)
 	if err != nil {
@@ -102,10 +119,12 @@ func Get(ctx context.Context, conf interface{}, svc SSM) error {
 
 		if evssm := os.Getenv(fmt.Sprintf("%s_SSM", f.Name)); evssm != "" {
 			p := ssm.GetParameterInput{Name: &evssm, WithDecryption: &f.Encrypted}
+
 			v, err := svc.GetParameterWithContext(ctx, &p)
 			if err != nil {
 				return err
 			}
+
 			rv.Field(f.Index).SetString(*v.Parameter.Value)
 		}
 	}

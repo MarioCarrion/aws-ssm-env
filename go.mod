@@ -1,10 +1,10 @@
 module github.com/MarioCarrion/aws-ssm-env
 
-go 1.12
+go 1.13
 
 require (
-	github.com/aws/aws-sdk-go v1.23.22
+	github.com/aws/aws-sdk-go v1.25.38
+	github.com/golangci/golangci-lint v1.21.0
 	github.com/google/go-cmp v0.3.1
-	github.com/stretchr/testify v1.4.0 // indirect
-	golang.org/x/net v0.0.0-20190916140828-c8589233b77d // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.2.2
 )

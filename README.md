@@ -14,3 +14,11 @@ Storing configuration in the environment, as in a [Twelve factor App](https://12
 1. Load your configuration file, if needed.
 1. Initialize [AWS SSM](https://github.com/aws/aws-sdk-go/tree/master/service/ssm)
 1. Load the configuration values.
+
+Please look at [the example](examples/main.go) for a concrete full example.
+
+## Development
+
+* Install [`direnv`](https://github.com/direnv/direnv)
+* Install required tools using `./script/tools.sh`
+* `go generate ./...` and `go test ./...` as usual

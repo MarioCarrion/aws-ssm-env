@@ -20,7 +20,7 @@ func TestLoadFields(t *testing.T) {
 		{
 			"OK",
 			&struct {
-				Encrypted    string `ssm:"ENCRYPTED" encrypted:"-"`
+				Encrypted    string `ssm:"ENCRYPTED,encrypted"`
 				NotEncrypted string `ssm:"NOT_ENCRYPTED"`
 			}{},
 			expected{
@@ -33,6 +33,20 @@ func TestLoadFields(t *testing.T) {
 					{
 						Index: 1,
 						Name:  "NOT_ENCRYPTED",
+					},
+				},
+			},
+		},
+		{
+			"OK: ignoring multiple commas",
+			&struct {
+				Encrypted string `ssm:"ENCRYPTED,encrypted,other"`
+			}{},
+			expected{
+				fields: []field{
+					{
+						Index: 0,
+						Name:  "ENCRYPTED",
 					},
 				},
 			},

@@ -2,14 +2,23 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/golang:1.12.7
+      - image: circleci/golang:1.13.4
     steps:
       - checkout
-      - run: go mod download
+      - run: go mod tidy
       - run: go test -v ./...
+  lint:
+    docker:
+      - image: circleci/golang:1.13.4
+    steps:
+      - checkout
+      - run: go mod tidy
+      - run: ./scripts/tools.sh
+      - run: golangci-lint run ./...
 
 workflows:
   version: 2
-  test:
+  test_and_lint:
     jobs:
       - test
+      - lint
